@@ -91,5 +91,118 @@ const createPayment = (req, res) => {
   });
 };
 
+```  
+
+
+
+
+# Hướng dẫn tích hợp Stripe vào ứng dụng web Node.js
+
+## Bước 1: Tạo tài khoản stripe
+
+Để bắt đầu, bạn cần có một tài khoản stripe. Nếu bạn chưa có, hãy truy cập [https://www.stripe.com](https://www.stripe.com) để tạo một tài khoản. Sau khi đăng ký, bạn sẽ nhận được các thông tin quan trọng như "Publishable Key" và "Secret Key". 
+
+## Bước 2: Cài đặt Stripe trong ứng dụng Node.js
+
+Nếu bạn chưa cài đặt Node.js và npm, hãy truy cập [https://nodejs.org](https://nodejs.org) để tải về và cài đặt phiên bản mới nhất. Mở terminal hoặc command prompt và di chuyển vào thư mục dự án của bạn. Sau đó, cài đặt thư viện Stripe bằng npm:
+```bash
+npm install stripe
+```
+
+## Bước 3: Khởi tạo Stripe và lưu các khóa .
+```javascript
+const stripeSecretKey = 'YOUR_STRIPE_SECRET_KEY';
+const stripe = require('stripe')(stripeSecretKey);
+```
+## Bước 4: Tạo routes để xử lý thanh toán
+Trong file server (ví dụ: 'index.js' hoặc 'server.js'), bạn sẽ cần thêm các routes để xử lý thanh toán thông qua Stripe . Dưới đây là một ví dụ:
+```javascript
+const express = require('express')
+const bodyparser = require('body-parser')
+const path = require('path')
+const app = express()
+
+var Publishable_Key = 'Your_Publishable_Key'
+var Secret_Key = 'Your_Secret_Key'
+
+const stripe = require('stripe')(Secret_Key)
+
+const port = process.env.PORT || 3000
+
+app.use(bodyparser.urlencoded({extended:false}))
+app.use(bodyparser.json())
+
+// View Engine Setup
+app.set('views', path.join(__dirname, 'views'))
+app.set('view engine', 'ejs')
+
+app.get('/', function(req, res){
+	res.render('Home', {
+	key: Publishable_Key
+	})
+})
+
+app.post('/payment', function(req, res){
+
+	// Moreover you can take more details from user
+	// like Address, Name, etc from form
+	stripe.customers.create({
+		email: req.body.stripeEmail,
+		source: req.body.stripeToken,
+		name: 'Gourav Hammad',
+		address: {
+			line1: 'TC 9/4 Old MES colony',
+			postal_code: '452331',
+			city: 'Indore',
+			state: 'Madhya Pradesh',
+			country: 'India',
+		}
+	})
+	.then((customer) => {
+
+		return stripe.charges.create({
+			amount: 2500,	 // Charging Rs 25
+			description: 'Web Development Product',
+			currency: 'INR',
+			customer: customer.id
+		});
+	})
+	.then((charge) => {
+		res.send("Success") // If no error occurs
+	})
+	.catch((err) => {
+		res.send(err)	 // If some error occurs
+	});
+})
+
+app.listen(port, function(error){
+	if(error) throw error
+	console.log("Server created Successfully")
+})
+```
+
+## Bước 5: Tạo trang thanh toán (payment.ejs)
+Trong thư mục 'views', tạo file 'payment.ejs', trong đó bạn có thể định nghĩa một form để nhận thông tin thanh toán từ người dùng (ví dụ: tên, số thẻ, ngày hết hạn, mã bảo mật,...). Dưới đây là ví dụ :
+```ejs
+<!DOCTYPE html>
+<html>
+<title>Stripe Payment Demo</title>
+<body>
+	<h3>Welcome to Payment Gateway</h3>
+	<form action="payment" method="POST">
+	<script
+		src="//checkout.stripe.com/v2/checkout.js"
+		class="stripe-button"
+		data-key="<%= key %>"
+		data-amount="2500"
+		data-currency="inr"
+		data-name="Crafty Gourav"
+		data-description="Handmade Art and Craft Products"
+		data-locale="auto" >
+		</script>
+	</form>
+</body>
+</html>
+
 ```
 
